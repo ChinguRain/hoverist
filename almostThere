@@ -1,0 +1,155 @@
+<template>
+  <v-app>
+    <v-container class="container" fluid>
+      <v-list class="bg-list">
+        <v-list-item
+          v-for="(item, index) in items"
+          :key="item.text"
+          :style="{ transform: item.transform }"
+          :class="{ 'zoomed-item': currentZoomedIndex === index }"
+          class="zoom-item"
+        >
+          <v-list-item-content>
+            <v-list-item-title class="v-list-item-title"
+              >{{ item.text }}</v-list-item-title
+            >
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-container>
+  </v-app>
+</template>
+
+<script>
+  import { ref, onMounted, onBeforeUnmount } from 'vue'
+
+  export default {
+    setup() {
+      const items = ref([
+        {
+          text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 1',
+          transform: 'scale(1)',
+        },
+        { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 2', transform: 'scale(1)' },
+        { text: 'Item 3', transform: 'scale(1)' },
+        { text: 'Item 4', transform: 'scale(1)' },
+        { text: 'Item 5', transform: 'scale(1)' },
+        { text: 'Item 6', transform: 'scale(1)' },
+        { text: 'Item 7', transform: 'scale(1)' },
+        { text: 'Item 8', transform: 'scale(1)' },
+        { text: 'Item 9', transform: 'scale(1)' },
+        { text: 'Item 10', transform: 'scale(1)' },
+        { text: 'Item 11', transform: 'scale(1)' },
+        { text: 'Item 12', transform: 'scale(1)' },
+        { text: 'Item 13', transform: 'scale(1)' },
+        { text: 'Item 14', transform: 'scale(1)' },
+      ])
+
+      const currentZoomedIndex = ref(-1)
+      let animationTimeout = null
+      let pauseTimeout = null
+      const isAnimating = ref(true)
+
+      const animateItem = index => {
+        if (!isAnimating.value) return
+
+        if (index >= items.value.length) {
+          index = 0
+        }
+
+        const item = items.value[index]
+        const isSmallScreen = window.innerWidth < 768
+
+        if (isSmallScreen) {
+          item.transform = 'scale(1.2)'
+          currentZoomedIndex.value = index
+        } else {
+          item.transform = 'scale(1)'
+        }
+
+        animationTimeout = setTimeout(() => {
+          item.transform = 'scale(1)'
+          currentZoomedIndex.value = -1
+
+          if ((index + 1) % 7 === 0) {
+            pauseTimeout = setTimeout(() => {
+              animateItem(index + 1)
+            }, 7000)
+          } else {
+            pauseTimeout = setTimeout(() => {
+              animateItem(index + 1)
+            }, 500)
+          }
+        }, 500)
+      }
+
+      const handleResize = () => {
+        if (window.innerWidth >= 768) {
+          isAnimating.value = false
+          clearTimeout(animationTimeout)
+          clearTimeout(pauseTimeout)
+          items.value.forEach(item => {
+            item.transform = 'scale(1)'
+          })
+          currentZoomedIndex.value = -1
+        } else {
+          isAnimating.value = true
+          animateItem(0)
+        }
+      }
+
+      onMounted(() => {
+        window.addEventListener('resize', handleResize)
+        if (window.innerWidth < 768) animateItem(0)
+      })
+
+      onBeforeUnmount(() => {
+        window.removeEventListener('resize', handleResize)
+        clearTimeout(animationTimeout)
+        clearTimeout(pauseTimeout)
+      })
+
+      return {
+        items,
+        currentZoomedIndex,
+      }
+    },
+  }
+</script>
+
+<style>
+.container {
+  padding: 70px; /* Padding around the container */
+}
+
+.bg-list {
+  background-color: #f0f0f0; /* Background color for the list */
+  padding: 60px; /* Padding for the list */
+}
+
+.zoom-item {
+  background-color: #ffffff; /* Background color for each item */
+  padding: 5px; /* Padding inside each item */
+  margin: 10px 0; /* Margin between items */
+  border: 1px solid #ccc; /* Border for each item */
+  border-radius: 4px; /* Rounded corners for each item */
+  transition: transform 0.5s ease; /* Smooth transition for zoom effect */
+  width: 100%; /* Ensure the item takes full width */
+}
+
+.zoom-item .v-list-item-title {
+  white-space: nowrap; /* Prevent text from wrapping */
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Show ellipsis for overflow text */
+}
+
+/* Styles for the zoomed item */
+.zoomed-item .v-list-item-title {
+  white-space: normal; /* Allow text to wrap */
+  overflow: visible; /* Ensure overflow text is visible */
+  text-overflow: clip; /* Prevent ellipsis */
+}
+
+.zoomed-item  {
+  background-color: #d1e7dd; /* Background color for the currently zoomed item */}
+</style>
