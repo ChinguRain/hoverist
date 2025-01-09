@@ -10,9 +10,7 @@
           class="zoom-item"
         >
           <v-list-item-content>
-            <v-list-item-title class="v-list-item-title"
-              >{{ item.text }}</v-list-item-title
-            >
+            <v-list-item-title class="v-list-item-title">{{ item.text }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -21,129 +19,132 @@
 </template>
 
 <script>
-  import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 
-  export default {
-    setup() {
-      const items = ref([
-        { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 1' },
-        { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 2' },
-        { text: 'Item 3' },
-        { text: 'Item 4' },
-        { text: 'Item 5' },
-        { text: 'Item 6' },
-        { text: 'Item 7' },
-        { text: 'Item 8' },
-        { text: 'Item 9' },
-        { text: 'Item 10' },
-        { text: 'Item 11' },
-        { text: 'Item 12' },
-        { text: 'Item 13' },
-        { text: 'Item 14' },
-      ])
+export default {
+  setup() {
+    const items = ref([
+      { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 1' },
+      { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 2' },
+      { text: 'Item 3' },
+      { text: 'Item 4' },
+      { text: 'Item 5' },
+      { text: 'Item 6' },
+      { text: 'Item 7' },
+      { text: 'Item 8' },
+      { text: 'Item 9' },
+      { text: 'Item 10' },
+      { text: 'Item 11' },
+      { text: 'Item 12' },
+      { text: 'Item 13' },
+      { text: 'Item 14' },
+    ]);
 
-      const currentZoomedIndex = ref(-1)
-      const isAnimating = ref(true)
-      let animationTimeout = null
-      let pauseTimeout = null
+    const currentZoomedIndex = ref(-1);
+    const isAnimating = ref(true);
+    let animationTimeout = null;
+    let pauseTimeout = null;
 
-      const getTransform = index => {
-        return currentZoomedIndex.value === index ? 'scale(1.2)' : 'scale(1)'
+    const getTransform = (index) => {
+      return currentZoomedIndex.value === index ? 'scale(1.2)' : 'scale(1)';
+    };
+
+    const animateItem = (index) => {
+      if (!isAnimating.value) return;
+
+      currentZoomedIndex.value = index;
+      const item = items.value[index];
+
+      animationTimeout = setTimeout(() => {
+        currentZoomedIndex.value = -1;
+
+        // Move to the next item
+        const nextIndex = (index + 1) % items.value.length;
+
+        // Set pause duration based on the index
+        const pauseDuration = (nextIndex % 7 === 0) ? 7000 : 500;
+
+        pauseTimeout = setTimeout(() => {
+          animateItem(nextIndex);
+        }, pauseDuration);
+      }, 500);
+    };
+
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        isAnimating.value = false;
+        clearTimeout(animationTimeout);
+        clearTimeout(pauseTimeout);
+        currentZoomedIndex.value = -1;
+      } else {
+        isAnimating.value = true;
+        animateItem(0);
       }
+    };
 
-      const animateItem = index => {
-        if (!isAnimating.value) return
+    const debounce = (func, delay) => {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      };
+    };
 
-        const item = items.value[index % items.value.length]
+    const debouncedHandleResize = debounce(handleResize, 200);
 
-        animationTimeout = setTimeout(() => {
-          currentZoomedIndex.value = -1
+    onMounted(() => {
+      window.addEventListener('resize', debouncedHandleResize);
+      if (window.innerWidth < 768) animateItem(0);
+    });
 
-          if ((index + 1) % 7 === 0) {
-            pauseTimeout = setTimeout(() => animateItem(index + 1), 7000)
-          } else {
-            pauseTimeout = setTimeout(() => animateItem(index + 1), 500)
-          }
-        }, 500)
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', debouncedHandleResize);
+      clearTimeout(animationTimeout);
+      clearTimeout(pauseTimeout);
+    });
 
-        currentZoomedIndex.value = index
-      }
-
-      const handleResize = () => {
-        if (window.innerWidth >= 768) {
-          isAnimating.value = false
-          clearTimeout(animationTimeout)
-          clearTimeout(pauseTimeout)
-          currentZoomedIndex.value = -1
-        } else {
-          isAnimating.value = true
-          animateItem(0)
-        }
-      }
-
-      const debounce = (func, delay) => {
-        let timeout
-        return (...args) => {
-          clearTimeout(timeout)
-          timeout = setTimeout(() => func.apply(this, args), delay)
-        }
-      }
-
-      const debouncedHandleResize = debounce(handleResize, 200)
-
-      onMounted(() => {
-        window.addEventListener('resize', debouncedHandleResize)
-        if (window.innerWidth < 768) animateItem(0)
-      })
-
-      onBeforeUnmount(() => {
-        window.removeEventListener('resize', debouncedHandleResize)
-        clearTimeout(animationTimeout)
-        clearTimeout(pauseTimeout)
-      })
-
-      return {
-        items,
-        currentZoomedIndex,
-        getTransform,
-      }
-    },
-  }
+    return {
+      items,
+      currentZoomedIndex,
+      getTransform,
+    };
+  },
+};
 </script>
 
 <style>
-  .container {
-    padding: 70px;
-  }
+.container {
+  padding: 70px;
+}
 
-  .bg-list {
-    background-color: #f0f0f0;
-    padding: 60px;
-  }
+.bg-list {
+  background-color: #f0f0f0;
+  padding: 60px;
+}
 
-  .zoom-item {
-    background-color: #ffffff;
-    padding: 5px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    transition: transform 0.5s ease;
-    width: 100%;
-  }
+.zoom-item {
+  background-color: #ffffff;
+  padding: 5px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: transform 0.5s ease;
+  width: 100%;
+}
 
-  .zoom-item .v-list-item-title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+.zoom-item .v-list-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-  .zoomed-item .v-list-item-title {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-  }
+.zoomed-item .v-list-item-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
 
-  .zoomed-item {
-    background-color: #d1e7dd;
-  }
+.zoomed-item {
+  background-color: #d1e7dd;
+}
 </style>
