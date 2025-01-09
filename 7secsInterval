@@ -1,0 +1,101 @@
+<template>
+  <v-app>
+    <v-container class="container" fluid>
+      <v-list class="bg-list">
+        <v-list-item
+          v-for="(item, index) in items"
+          :key="item.text"
+          :style="{ transform: item.transform }"
+          class="zoom-item"
+        >
+          <v-list-item-content>
+            <v-list-item-title>{{ item.text }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-container>
+  </v-app>
+</template>
+
+<script>
+  import { ref, onMounted } from 'vue'
+
+  export default {
+    setup() {
+      const items = ref([
+        { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 1', transform: 'scale(1)' },
+        { text: 'Item 2', transform: 'scale(1)' },
+        { text: 'Item 3', transform: 'scale(1)' },
+        { text: 'Item 4', transform: 'scale(1)' },
+        { text: 'Item 5', transform: 'scale(1)' },
+        { text: 'Item 6', transform: 'scale(1)' },
+        { text: 'Item 7', transform: 'scale(1)' },
+        { text: 'Item 8', transform: 'scale(1)' },
+        { text: 'Item 9', transform: 'scale(1)' },
+        { text: 'Item 10', transform: 'scale(1)' },
+        { text: 'Item 11', transform: 'scale(1)' },
+        { text: 'Item 12', transform: 'scale(1)' },
+        { text: 'Item 13', transform: 'scale(1)' },
+        { text: 'Item 14', transform: 'scale(1)' },
+      ])
+
+      const animateItem = index => {
+        if (index >= items.value.length) {
+          index = 0 // Restart from the first item
+        }
+
+        const item = items.value[index]
+        item.transform = 'scale(1.2)' // Zoom in effect
+
+        // Duration of the zoom-in effect
+        setTimeout(() => {
+          item.transform = 'scale(1)' // Return to normal scale
+
+          // Check if we need to pause for 7 seconds after every 7 items
+          if ((index + 1) % 7 === 0) {
+            // Pause for 7 seconds
+            setTimeout(() => {
+              animateItem(index + 1) // Animate the next item
+            }, 7000) // Wait for 7 seconds before animating the next item
+          } else {
+            // Continue to the next item after 1 second pause
+            setTimeout(() => {
+              animateItem(index + 1) // Animate the next item
+            }, 500) // Wait for 1 second before animating the next item
+          }
+        }, 500) // Duration of the zoom-in effect
+      }
+
+      onMounted(() => {
+        animateItem(0) // Start the animation from the first item
+      })
+
+      return {
+        items,
+      }
+    },
+  }
+</script>
+
+<style>
+  .container {
+    padding: 70px; /* Padding around the container */
+  }
+
+  .bg-list {
+    background-color: #f0f0f0; /* Background color for the list */
+    padding: 60px; /* Padding for the list */
+    border-radius: 8px; /* Rounded corners for the list */
+    overflow: hidden; /* Prevent items from overflowing */
+  }
+
+  .zoom-item {
+    background-color: #ffffff; /* Background color for each item */
+    padding: 5px; /* Padding inside each item */
+    margin: 10px 0; /* Margin between items */
+    border: 1px solid #ccc; /* Border for each item */
+    border-radius: 4px; /* Rounded corners for each item */
+    transition: transform 0.5s ease; /* Smooth transition for zoom effect */
+
+  }
+</style>
