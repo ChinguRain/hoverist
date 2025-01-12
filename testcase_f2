@@ -1,0 +1,402 @@
+import { shallowMount } from '@vue/test-utils'
+import ZoomComponent from '@/components/ZoomComponent.vue'  // Update with your actual file path
+
+describe('ZoomComponent.vue', () => {
+  it('renders the component properly', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    expect(wrapper.exists()).toBe(true)
+    expect(wrapper.findAll('.zoom-item').length).toBe(14) // Tests if 14 items are rendered
+  })
+
+  it('handles resize events correctly when window is smaller than 768px', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 500
+    window.dispatchEvent(new Event('resize'))
+
+    await wrapper.vm.$nextTick()
+
+    // Check that the `isAnimating` is false after resize for smaller screen
+    expect(wrapper.vm.isAnimating).toBe(false)
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('handles resize events correctly when window is larger than 768px', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 1200
+    window.dispatchEvent(new Event('resize'))
+
+    await wrapper.vm.$nextTick()
+
+    // Check that the `isAnimating` is true after resize for larger screen
+    expect(wrapper.vm.isAnimating).toBe(true)
+  })
+
+  it('changes zoomed item index on mouse enter and leave', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    const firstItem = wrapper.findAll('.zoom-item').at(0)
+    await firstItem.trigger('mouseenter')
+
+    // Ensure that the first item is zoomed in after mouseenter
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+
+    await firstItem.trigger('mouseleave')
+
+    // Ensure that the zoomed index is set back to the next item
+    expect(wrapper.vm.currentZoomedIndex).toBe(1) // assuming the logic is working as expected
+  })
+
+  it('animates the item properly on `animateItem` call', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    // Initially, currentZoomedIndex should be -1
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+
+    // Trigger animation on first item
+    wrapper.vm.animateItem(0)
+
+    // Check if the animation sets the correct zoomed index
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+  })
+
+  it('pauses animation for certain durations based on index', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    jest.useFakeTimers()
+
+    wrapper.vm.animateItem(6)  // Item at index 6 should cause a pause of 7000 ms
+    
+    // After 500ms animation delay, we simulate the next animation
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 500)
+    
+    // After a pause duration of 7000ms, it should proceed with next animation
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 7000)
+    
+    jest.useRealTimers()
+  })
+
+  it('initializes currentZoomedIndex as -1 on mount', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('clears timeouts when the component is destroyed', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout')
+    
+    // Simulate unmounting
+    await wrapper.vm.$destroy()
+
+    // Ensure that clearTimeout is called to clean up timeouts
+    expect(clearTimeoutSpy).toHaveBeenCalled()
+
+    clearTimeoutSpy.mockRestore()
+  })
+
+  it('handles behavior on small screen (below 768px) when `animateItem` is called', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 500
+    wrapper.vm.animateItem(0)
+
+    await wrapper.vm.$nextTick()
+    
+    // Ensure the item zooms in after calling animateItem when below 768px
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+  })
+})
+
+
+////////////////////////////////////
+
+import { shallowMount } from '@vue/test-utils'
+import ZoomComponent from '@/components/ZoomComponent.vue'  // Update with your actual file path
+
+describe('ZoomComponent.vue', () => {
+  it('renders the component properly', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    expect(wrapper.exists()).toBe(true)
+    expect(wrapper.findAll('.zoom-item').length).toBe(14) // Tests if 14 items are rendered
+  })
+
+  it('handles resize events correctly when window is smaller than 768px', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 500
+    window.dispatchEvent(new Event('resize'))
+
+    await wrapper.vm.$nextTick()
+
+    // Check that the `isAnimating` is false after resize for smaller screen
+    expect(wrapper.vm.isAnimating).toBe(false)
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('handles resize events correctly when window is larger than 768px', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 1200
+    window.dispatchEvent(new Event('resize'))
+
+    await wrapper.vm.$nextTick()
+
+    // Check that the `isAnimating` is true after resize for larger screen
+    expect(wrapper.vm.isAnimating).toBe(true)
+  })
+
+  it('changes zoomed item index on mouse enter and leave', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    const firstItem = wrapper.findAll('.zoom-item').at(0)
+    await firstItem.trigger('mouseenter')
+
+    // Ensure that the first item is zoomed in after mouseenter
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+
+    await firstItem.trigger('mouseleave')
+
+    // Ensure that the zoomed index is set back to the next item
+    expect(wrapper.vm.currentZoomedIndex).toBe(1) // assuming the logic is working as expected
+  })
+
+  it('animates the item properly on `animateItem` call', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    // Initially, currentZoomedIndex should be -1
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+
+    // Trigger animation on first item
+    wrapper.vm.animateItem(0)
+
+    // Check if the animation sets the correct zoomed index
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+  })
+
+  it('pauses animation for certain durations based on index', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    jest.useFakeTimers()
+
+    wrapper.vm.animateItem(6)  // Item at index 6 should cause a pause of 7000 ms
+    
+    // After 500ms animation delay, we simulate the next animation
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 500)
+    
+    // After a pause duration of 7000ms, it should proceed with next animation
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 7000)
+    
+    jest.useRealTimers()
+  })
+
+  it('initializes currentZoomedIndex as -1 on mount', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('clears timeouts when the component is destroyed', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout')
+
+    // Simulate unmounting, wait for Vue to finish its async cleanup
+    await wrapper.vm.$nextTick() // Ensure lifecycle hooks are done
+    wrapper.vm.$destroy() // Clean up
+
+    // Ensure that clearTimeout is called to clean up timeouts
+    expect(clearTimeoutSpy).toHaveBeenCalled()
+
+    clearTimeoutSpy.mockRestore()
+  })
+
+  it('handles behavior on small screen (below 768px) when `animateItem` is called', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 500
+    wrapper.vm.animateItem(0)
+
+    await wrapper.vm.$nextTick()
+    
+    // Ensure the item zooms in after calling animateItem when below 768px
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+  })
+})
+
+
+
+
+
+////////////////////////////
+import { shallowMount } from '@vue/test-utils'
+import ZoomComponent from '@/components/ZoomComponent.vue'  // Update with your actual file path
+
+describe('ZoomComponent.vue', () => {
+  it('renders the component properly', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    expect(wrapper.exists()).toBe(true)
+    expect(wrapper.findAll('.zoom-item').length).toBe(14) // Tests if 14 items are rendered
+  })
+
+  it('handles resize events correctly when window is smaller than 768px', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 500
+    window.dispatchEvent(new Event('resize'))
+
+    await wrapper.vm.$nextTick()
+
+    // Check that the `isAnimating` is false after resize for smaller screen
+    expect(wrapper.vm.isAnimating).toBe(false)
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('handles resize events correctly when window is larger than 768px', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 1200
+    window.dispatchEvent(new Event('resize'))
+
+    await wrapper.vm.$nextTick()
+
+    // Check that the `isAnimating` is true after resize for larger screen
+    expect(wrapper.vm.isAnimating).toBe(true)
+  })
+
+  it('changes zoomed item index on mouse enter and leave', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    const firstItem = wrapper.findAll('.zoom-item').at(0)
+    await firstItem.trigger('mouseenter')
+
+    // Ensure that the first item is zoomed in after mouseenter
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+
+    await firstItem.trigger('mouseleave')
+
+    // Ensure that the zoomed index is set back to the next item
+    expect(wrapper.vm.currentZoomedIndex).toBe(1) // assuming the logic is working as expected
+  })
+
+  it('animates the item properly on `animateItem` call', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    // Initially, currentZoomedIndex should be -1
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+
+    // Trigger animation on first item
+    wrapper.vm.animateItem(0)
+
+    // Check if the animation sets the correct zoomed index
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+  })
+
+  it('pauses animation for certain durations based on index', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    jest.useFakeTimers()
+
+    wrapper.vm.animateItem(6)  // Item at index 6 should cause a pause of 7000 ms
+    
+    // After 500ms animation delay, we simulate the next animation
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 500)
+    
+    // After a pause duration of 7000ms, it should proceed with next animation
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 7000)
+    
+    jest.useRealTimers()
+  })
+
+  it('initializes currentZoomedIndex as -1 on mount', () => {
+    const wrapper = shallowMount(ZoomComponent)
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('clears timeouts when the component is destroyed', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout')
+
+    // Simulate unmounting, wait for Vue to finish its async cleanup
+    await wrapper.vm.$nextTick() // Ensure lifecycle hooks are done
+    wrapper.vm.$destroy() // Clean up
+
+    // Ensure that clearTimeout is called to clean up timeouts
+    expect(clearTimeoutSpy).toHaveBeenCalled()
+
+    clearTimeoutSpy.mockRestore()
+  })
+
+  it('handles behavior on small screen (below 768px) when `animateItem` is called', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    global.innerWidth = 500
+    wrapper.vm.animateItem(0)
+
+    await wrapper.vm.$nextTick()
+    
+    // Ensure the item zooms in after calling animateItem when below 768px
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+  })
+
+  it('handles multiple mouse enter and leave events quickly', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    const firstItem = wrapper.findAll('.zoom-item').at(0)
+    
+    // Simulate multiple hover events in quick succession
+    await firstItem.trigger('mouseenter')
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+    
+    await firstItem.trigger('mouseleave')
+    expect(wrapper.vm.currentZoomedIndex).toBe(1)
+    
+    await firstItem.trigger('mouseenter')
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+    
+    await firstItem.trigger('mouseleave')
+    expect(wrapper.vm.currentZoomedIndex).toBe(1)
+  })
+
+  it('handles an empty items list gracefully', async () => {
+    const wrapper = shallowMount(ZoomComponent, {
+      data() {
+        return {
+          items: []
+        }
+      }
+    })
+    
+    // Ensure no items are rendered
+    expect(wrapper.findAll('.zoom-item').length).toBe(0)
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1)
+  })
+
+  it('handles multiple window resize events', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    
+    global.innerWidth = 500
+    window.dispatchEvent(new Event('resize'))
+    await wrapper.vm.$nextTick()
+    
+    // Check for smaller screen behavior
+    expect(wrapper.vm.isAnimating).toBe(false)
+
+    global.innerWidth = 1200
+    window.dispatchEvent(new Event('resize'))
+    await wrapper.vm.$nextTick()
+    
+    // Check for larger screen behavior
+    expect(wrapper.vm.isAnimating).toBe(true)
+  })
+
+  it('correctly animates through all items in a loop', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    
+    // Simulate initial animation
+    wrapper.vm.animateItem(0)
+    await wrapper.vm.$nextTick()
+    
+    // Ensure the first item is zoomed in
+    expect(wrapper.vm.currentZoomedIndex).toBe(0)
+    
+    // Simulate the next cycle (next item should be zoomed in)
+    wrapper.vm.animateItem(1)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.vm.currentZoomedIndex).toBe(1)
+  })
+
+  it('handles dynamic items list update', async () => {
+    const wrapper = shallowMount(ZoomComponent)
+    
+    // Initially 14 items should be present
+    expect(wrapper.findAll('.zoom-item').length).toBe(14)
+    
+    // Dynamically update the items array
+    await wrapper.setData({
+      items: [{ text: 'New Item 1' }, { text: 'New Item 2' }]
+    })
+
+    // Ensure the items list has been updated
+    expect(wrapper.findAll('.zoom-item').length).toBe(2)
+  })
+})
