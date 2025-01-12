@@ -1,0 +1,145 @@
+<template>
+  <v-app>
+    <v-container class="container" fluid>
+      <v-list class="bg-list">
+        <v-list-item
+          v-for="(item, index) in items"
+          :key="item.text"
+          :style="{ transform: getTransform(index) }"
+          :class="{ 'zoomed-item': currentZoomedIndex === index }"
+          class="zoom-item"
+        >
+          <v-list-item-content>
+            <v-list-item-title class="v-list-item-title"
+              >{{ item.text }}</v-list-item-title
+            >
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-container>
+  </v-app>
+</template>
+
+<script>
+  import { ref, onMounted, onBeforeUnmount } from 'vue'
+
+  export default {
+    data() {
+      return {
+        items: [
+          { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 1' },
+          { text: 'Iteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeem 2' },
+          { text: 'Item 3' },
+          { text: 'Item 4' },
+          { text: 'Item 5' },
+          { text: 'Item 6' },
+          { text: 'Item 7' },
+          { text: 'Item 8' },
+          { text: 'Item 9' },
+          { text: 'Item 10' },
+          { text: 'Item 11' },
+          { text: 'Item 12' },
+          { text: 'Item 13' },
+          { text: 'Item 14' },
+        ],
+        currentZoomedIndex: -1,
+        isAnimating: true,
+        animationTimeout: null,
+        pauseTimeout: null,
+      }
+    },
+    methods: {
+      getTransform(index) {
+        return this.currentZoomedIndex === index ? 'scale(1.2)' : 'scale(1)'
+      },
+      animateItem(index) {
+        if (!this.isAnimating) return
+
+        this.currentZoomedIndex = index
+        const item = this.items[index]
+
+        this.animationTimeout = setTimeout(() => {
+          this.currentZoomedIndex = -1
+
+          // Move to the next item
+          const nextIndex = (index + 1) % this.items.length
+
+          // Set pause duration based on the index
+          const pauseDuration = nextIndex % 7 === 0 ? 7000 : 500
+
+          this.pauseTimeout = setTimeout(() => {
+            this.animateItem(nextIndex)
+          }, pauseDuration)
+        }, 500)
+      },
+      handleResize() {
+        if (window.innerWidth >= 768) {
+          this.isAnimating = false
+          clearTimeout(this.animationTimeout)
+          clearTimeout(this.pauseTimeout)
+          this.currentZoomedIndex = -1
+        } else {
+          this.isAnimating = true
+          this.animateItem(0)
+        }
+      },
+      debounce(func, delay) {
+        let timeout
+        return (...args) => {
+          clearTimeout(timeout)
+          timeout = setTimeout(() => func.apply(this, args), delay)
+        }
+      },
+    },
+    mounted() {
+      const debouncedHandleResize = this.debounce(this.handleResize, 200)
+      window.addEventListener('resize', debouncedHandleResize)
+      if (window.innerWidth < 768) this.animateItem(0)
+    },
+    beforeUnmount() {
+      window.removeEventListener(
+        'resize',
+        this.debounce(this.handleResize, 200)
+      )
+      clearTimeout(this.animationTimeout)
+      clearTimeout(this.pauseTimeout)
+    },
+  }
+</script>
+
+<style>
+  .container {
+    padding: 70px;
+  }
+
+  .bg-list {
+    background-color: #f0f0f0;
+    padding: 60px;
+  }
+
+  .zoom-item {
+    background-color: #ffffff;
+    padding: 5px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: transform 0.5s ease;
+    width: 100%;
+  }
+
+  .zoom-item .v-list-item-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .zoomed-item .v-list-item-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .zoomed-item {
+    background-color: #d1e7dd;
+  }
+</style>
