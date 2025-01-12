@@ -1,0 +1,96 @@
+<script>
+  export default {
+    data() {
+      return {
+        // Array of items with dynamically generated text (14 items)
+        items: Array.from({ length: 14 }, (_, i) => ({
+          text: `Item ${i + 1}${i > 0 ? 'e'.repeat(i * 2) : ''}`,
+        })),
+        currentZoomedIndex: -1, // Initially no item is zoomed
+        isAnimating: true, // Flag to control animation state
+        animationTimeout: null, // Holds the timeout for animation
+        pauseTimeout: null, // Holds the timeout for pause between animations
+      }
+    },
+    methods: {
+      clearAllTimeouts() {
+        // Clears any pending timeouts to avoid memory leaks or unwanted behavior
+        clearTimeout(this.animationTimeout)
+        clearTimeout(this.pauseTimeout)
+      },
+      getTransform(index) {
+        // Returns the CSS transform value (scaling) based on the zoomed index
+        if (this.currentZoomedIndex === index) {
+          return 'scale(1.2)' // Zoom effect
+        } else {
+          return 'scale(1)' // Normal size
+        }
+      },
+      animateItem(index) {
+        if (!this.isAnimating) return // If animation is disabled, do nothing
+
+        this.currentZoomedIndex = index // Set the zoomed item index
+
+        this.animationTimeout = setTimeout(() => {
+          this.currentZoomedIndex = -1 // Reset zoomed index after 500ms
+          const nextIndex = (index + 1) % this.items.length // Calculate the next index in a circular manner
+          let pauseDuration
+
+          // Pause duration logic based on index
+          if (nextIndex % 7 === 0) {
+            pauseDuration = 7000 // 7th item pauses longer
+          } else {
+            pauseDuration = 500 // Default pause duration
+          }
+
+          this.pauseTimeout = setTimeout(() => {
+            this.animateItem(nextIndex) // Recursively call animateItem to animate the next item
+          }, pauseDuration)
+        }, 500) // Animation time
+      },
+      handleResize() {
+        // Handle window resize events (responsiveness)
+        this.isAnimating = false // Stop animation when resizing
+        this.clearAllTimeouts() // Clear any pending timeouts
+        this.currentZoomedIndex = -1 // Reset zoomed index
+
+        // Restart animation after resizing with a small delay
+        this.animationTimeout = setTimeout(() => {
+          this.isAnimating = true
+          if (window.innerWidth < 768) { // If window width is below 768px (mobile devices)
+            this.animateItem(0) // Start the animation from the first item
+          }
+        }, 200)
+      },
+      handleMouseEnter(index) {
+        // Handle mouse enter event (on hover)
+        if (window.innerWidth < 768) { // Only trigger on small screens
+          this.isAnimating = false // Stop animation when hovering over an item
+          this.clearAllTimeouts() // Clear all pending timeouts
+          this.currentZoomedIndex = index // Set the current item as zoomed
+        }
+      },
+      handleMouseLeave() {
+        // Handle mouse leave event (when hover ends)
+        if (window.innerWidth < 768) { // Only trigger on small screens
+          this.isAnimating = true // Resume animation
+          this.clearAllTimeouts() // Clear all pending timeouts
+          const nextIndex = (this.currentZoomedIndex + 1) % this.items.length // Calculate next item index
+          this.animateItem(nextIndex) // Start animating the next item
+        }
+      },
+    },
+    mounted() {
+      // Add resize event listener when the component is mounted
+      window.addEventListener('resize', this.handleResize)
+      this.handleResize() // Call it once to handle initial window size
+
+      if (window.innerWidth < 768) this.animateItem(0) // If on mobile, start animation on mount
+    },
+    beforeUnmount() {
+      // Clean up when the component is about to be destroyed
+      window.removeEventListener('resize', this.handleResize) // Remove resize event listener
+      this.clearAllTimeouts() // Clear all timeouts to prevent memory leaks
+    },
+  }
+</script>
