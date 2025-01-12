@@ -1,0 +1,403 @@
+<template>
+  <div>
+    <ZoomList
+      :items="customItems"
+      :zoomFactor="1.3"
+      :animationDuration="700"
+      :pauseDuration="1000"
+      :isAnimating="true"
+      :mobileThreshold="768"
+    />
+  </div>
+</template>
+
+<script>
+import ZoomList from './ZoomList.vue'; // Import the reusable component
+
+export default {
+  components: {
+    ZoomList,
+  },
+  data() {
+    return {
+      customItems: [
+        { text: 'Custom Item 1' },
+        { text: 'Custom Item 2' },
+        { text: 'Custom Item 3' },
+        // Add more items as needed
+      ],
+    };
+  },
+};
+</script>
+
+
+???????????????????????????
+common
+
+<template>
+  <v-app>
+    <v-container v-resize="handleResize" fluid>
+      <v-list dense>
+        <div
+          v-for="(item, index) in items"
+          :key="item.text"
+          class="zoom-item"
+          @mouseenter="handleMouseEnter(index)"
+          @mouseleave="handleMouseLeave"
+        >
+          <v-list-item-content>
+            <v-list-item-title>{{ item.text }}</v-list-item-title>
+          </v-list-item-content>
+          <div v-if="currentZoomedIndex === index" class="zoomed-item">
+            <v-list-item-content>
+              <v-list-item-title>{{ item.text }}</v-list-item-title>
+            </v-list-item-content>
+          </div>
+        </div>
+      </v-list>
+    </v-container>
+  </v-app>
+</template>
+
+<script>
+export default {
+  props: {
+    // Accepts a list of items as a prop
+    items: {
+      type: Array,
+      required: true,
+    },
+    // Customizable zoom factor, default is 1.2
+    zoomFactor: {
+      type: Number,
+      default: 1.2,
+    },
+    // Customizable animation duration, default is 500ms
+    animationDuration: {
+      type: Number,
+      default: 500,
+    },
+    // Customizable pause duration, default is 500ms
+    pauseDuration: {
+      type: Number,
+      default: 500,
+    },
+    // Allow enabling or disabling animation
+    isAnimating: {
+      type: Boolean,
+      default: true,
+    },
+    // Threshold for mobile responsiveness
+    mobileThreshold: {
+      type: Number,
+      default: 768,
+    },
+  },
+  data() {
+    return {
+      currentZoomedIndex: -1,
+      animationTimeout: null,
+      pauseTimeout: null,
+    };
+  },
+  methods: {
+    clearAllTimeouts() {
+      clearTimeout(this.animationTimeout);
+      clearTimeout(this.pauseTimeout);
+    },
+    getTransform(index) {
+      if (this.currentZoomedIndex === index) {
+        return `scale(${this.zoomFactor})`;
+      } else {
+        return 'scale(1)';
+      }
+    },
+    animateItem(index) {
+      if (!this.isAnimating) return;
+
+      this.currentZoomedIndex = index;
+
+      this.animationTimeout = setTimeout(() => {
+        this.currentZoomedIndex = -1;
+        const nextIndex = (index + 1) % this.items.length;
+
+        let pauseDuration = this.pauseDuration;
+        if (nextIndex % 7 === 0) {
+          pauseDuration = 7000;
+        }
+
+        this.pauseTimeout = setTimeout(() => {
+          this.animateItem(nextIndex);
+        }, pauseDuration);
+      }, this.animationDuration);
+    },
+    handleResize() {
+      this.isAnimating = false;
+      this.clearAllTimeouts();
+      this.currentZoomedIndex = -1;
+
+      this.animationTimeout = setTimeout(() => {
+        this.isAnimating = true;
+        if (window.innerWidth < this.mobileThreshold) {
+          this.animateItem(0);
+        }
+      }, 200);
+    },
+    handleMouseEnter(index) {
+      if (window.innerWidth < this.mobileThreshold) {
+        this.isAnimating = false;
+        this.clearAllTimeouts();
+        this.currentZoomedIndex = index;
+      }
+    },
+    handleMouseLeave() {
+      if (window.innerWidth < this.mobileThreshold) {
+        this.isAnimating = true;
+        this.clearAllTimeouts();
+        const nextIndex = (this.currentZoomedIndex + 1) % this.items.length;
+        this.animateItem(nextIndex);
+      }
+    },
+  },
+  mounted() {
+    window.addEventListener('resize', this.handleResize);
+    this.handleResize();
+    if (window.innerWidth < this.mobileThreshold) this.animateItem(0);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+    this.clearAllTimeouts();
+  },
+};
+</script>
+
+<style scoped>
+.v-container {
+  padding: 70px;
+}
+
+.v-list {
+  background-color: #f0f0f0;
+  padding: 30px;
+  height: 42.5rem;
+}
+
+.zoom-item {
+  background-color: #ffffff;
+  padding: 5px;
+  margin: 6px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: transform 0.5s ease;
+  width: 100%;
+  position: relative;
+}
+
+.zoom-item .v-list-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zoomed-item .v-list-item-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.zoomed-item {
+  background-color: #d1e7dd;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transform: scale(1.2);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+}
+</style>
+
+
+useCOmmon
+<template>
+  <div>
+    <!-- First ZoomList instance with fast animation and 1.3 zoom factor -->
+    <ZoomList
+      :items="customItems1"
+      :zoomFactor="1.3"
+      :animationDuration="300" <!-- Faster animation -->
+      :pauseDuration="1000"
+      :isAnimating="true"
+      :mobileThreshold="768"
+    />
+
+    <!-- Second ZoomList instance with slower animation and different zoom factor -->
+    <ZoomList
+      :items="customItems2"
+      :zoomFactor="1.5"
+      :animationDuration="1000" <!-- Slower animation -->
+      :pauseDuration="1500"
+      :isAnimating="true"
+      :mobileThreshold="768"
+    />
+  </div>
+</template>
+
+<script>
+import ZoomList from './ZoomList.vue'; // Import the reusable ZoomList component
+
+export default {
+  components: {
+    ZoomList, // Register the ZoomList component for use
+  },
+  data() {
+    return {
+      // Define different sets of items for each ZoomList instance
+      customItems1: [
+        { text: 'Custom Item 1' },
+        { text: 'Custom Item 2' },
+        { text: 'Custom Item 3' },
+        // Add more items as needed
+      ],
+      customItems2: [
+        { text: 'Another Item 1' },
+        { text: 'Another Item 2' },
+        { text: 'Another Item 3' },
+        // Add more items as needed
+      ],
+    };
+  },
+};
+</script>
+
+
+
+///testcomm
+import { mount } from '@vue/test-utils';
+import ZoomList from '@/components/ZoomList.vue';
+
+describe('ZoomList.vue', () => {
+  let wrapper;
+
+  // Test when component receives default props
+  it('renders with default props', async () => {
+    const items = [{ text: 'Item 1' }, { text: 'Item 2' }];
+    wrapper = mount(ZoomList, {
+      propsData: { items }
+    });
+
+    // Check if items are rendered correctly
+    expect(wrapper.findAll('.zoom-item').length).toBe(items.length);
+
+    // Test that default animationDuration is applied (500ms)
+    expect(wrapper.vm.animationDuration).toBe(500);
+  });
+
+  // Test when zoomFactor prop is passed
+  it('applies custom zoom factor', async () => {
+    const items = [{ text: 'Item 1' }];
+    const zoomFactor = 1.5;
+    wrapper = mount(ZoomList, {
+      propsData: { items, zoomFactor }
+    });
+
+    // Check if zoom factor is applied
+    const transformValue = wrapper.vm.getTransform(0);
+    expect(transformValue).toBe('scale(1.5)');
+  });
+
+  // Test when animationDuration prop is passed
+  it('applies custom animation duration', async () => {
+    const items = [{ text: 'Item 1' }];
+    const animationDuration = 1000;
+    wrapper = mount(ZoomList, {
+      propsData: { items, animationDuration }
+    });
+
+    // Check if the component's animation duration matches the passed prop
+    expect(wrapper.vm.animationDuration).toBe(1000);
+  });
+
+  // Test when pauseDuration prop is passed
+  it('applies custom pause duration', async () => {
+    const items = [{ text: 'Item 1' }];
+    const pauseDuration = 2000;
+    wrapper = mount(ZoomList, {
+      propsData: { items, pauseDuration }
+    });
+
+    // Check if the pauseDuration is correctly set
+    expect(wrapper.vm.pauseDuration).toBe(2000);
+  });
+
+  // Test handleMouseEnter behavior on smaller screens
+  it('sets currentZoomedIndex on mouse enter', async () => {
+    const items = [{ text: 'Item 1' }];
+    wrapper = mount(ZoomList, {
+      propsData: { items }
+    });
+
+    // Simulate mouse enter event on the first item
+    await wrapper.find('.zoom-item').trigger('mouseenter');
+    expect(wrapper.vm.currentZoomedIndex).toBe(0);
+  });
+
+  // Test handleMouseLeave behavior on smaller screens
+  it('handles mouse leave correctly', async () => {
+    const items = [{ text: 'Item 1' }];
+    wrapper = mount(ZoomList, {
+      propsData: { items }
+    });
+
+    // Simulate mouse enter and then mouse leave events
+    await wrapper.find('.zoom-item').trigger('mouseenter');
+    await wrapper.find('.zoom-item').trigger('mouseleave');
+
+    // Assert the currentZoomedIndex is reset or changed correctly
+    expect(wrapper.vm.currentZoomedIndex).toBe(0); // Based on your logic
+  });
+
+  // Test for window resizing (resize event listener)
+  it('handles window resize event', async () => {
+    const items = [{ text: 'Item 1' }];
+    wrapper = mount(ZoomList, {
+      propsData: { items }
+    });
+
+    // Simulate resize event
+    window.innerWidth = 600;
+    await wrapper.vm.handleResize();
+
+    // Check if resize affects animation state
+    expect(wrapper.vm.isAnimating).toBe(false); // Should be false after resize based on logic
+  });
+
+  // Test if the correct class is applied when the zoomed item is in focus
+  it('applies zoomed-item class when item is zoomed', async () => {
+    const items = [{ text: 'Item 1' }];
+    wrapper = mount(ZoomList, {
+      propsData: { items }
+    });
+
+    // Simulate mouse enter on the first item to zoom in
+    await wrapper.find('.zoom-item').trigger('mouseenter');
+    expect(wrapper.find('.zoomed-item').exists()).toBe(true);
+  });
+
+  // Test if resize event listener is cleaned up before component is unmounted
+  it('cleans up resize event listener before unmounting', () => {
+    const items = [{ text: 'Item 1' }];
+    wrapper = mount(ZoomList, {
+      propsData: { items }
+    });
+
+    const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+    wrapper.unmount();
+    expect(removeEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+  });
+});
+
+
