@@ -1,0 +1,47 @@
+import { shallowMount } from '@vue/test-utils';
+import YourComponent from '@/path/to/YourComponent.vue'; // Adjust the import path
+
+describe('YourComponent.vue', () => {
+  it('renders the correct number of items', () => {
+    const wrapper = shallowMount(YourComponent);
+    const items = wrapper.vm.items;
+    expect(wrapper.findAll('.zoom-item')).toHaveLength(items.length);
+  });
+
+  it('sets currentZoomedIndex on mouse enter', async () => {
+    const wrapper = shallowMount(YourComponent);
+    const firstItem = wrapper.find('.zoom-item');
+    await firstItem.trigger('mouseenter');
+    expect(wrapper.vm.currentZoomedIndex).toBe(0);
+  });
+
+  it('resets currentZoomedIndex on mouse leave', async () => {
+    const wrapper = shallowMount(YourComponent);
+    const firstItem = wrapper.find('.zoom-item');
+    await firstItem.trigger('mouseenter');
+    await firstItem.trigger('mouseleave');
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1);
+  });
+
+  it('handles window resize correctly', async () => {
+    const wrapper = shallowMount(YourComponent);
+    // Simulate a resize event
+    window.innerWidth = 500; // Set a width less than 768
+    window.dispatchEvent(new Event('resize'));
+    await wrapper.vm.$nextTick(); // Wait for the next DOM update
+
+    expect(wrapper.vm.isAnimating).toBe(false);
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1);
+  });
+
+  it('does not set currentZoomedIndex on mouse enter if width is greater than 768', async () => {
+    const wrapper = shallowMount(YourComponent);
+    window.innerWidth = 800; // Set a width greater than 768
+    window.dispatchEvent(new Event('resize'));
+    await wrapper.vm.$nextTick(); // Wait for the next DOM update
+
+    const firstItem = wrapper.find('.zoom-item');
+    await firstItem.trigger('mouseenter');
+    expect(wrapper.vm.currentZoomedIndex).toBe(-1); // Should not change
+  });
+});
