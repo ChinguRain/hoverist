@@ -1,0 +1,109 @@
+<template>
+  <v-app>
+    <v-container v-resize="handleResize" fluid>
+      <v-list dense>
+        <div
+          v-for="(item, index) in items"
+          :key="item.text"
+          class="zoom-item"
+          @mouseenter="handleMouseEnter(index)"
+          @mouseleave="handleMouseLeave"
+        >
+          <v-list-item-content>
+            <v-list-item-title>{{ item.text }}</v-list-item-title>
+          </v-list-item-content>
+          <div v-if="currentZoomedIndex === index" class="zoomed-item">
+            <v-list-item-content>
+              <v-list-item-title>{{ item.text }}</v-list-item-title>
+            </v-list-item-content>
+          </div>
+        </div>
+      </v-list>
+    </v-container>
+  </v-app>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      items: Array.from({ length: 14 }, (_, i) => ({
+        text: `Item ${i + 1}${i > 0 ? 'e'.repeat(i * 2) : ''}`,
+      })),
+      currentZoomedIndex: -1,
+      isAnimating: false, // Set to false to disable automatic animation
+    }
+  },
+  methods: {
+    handleResize() {
+      this.isAnimating = false;
+      this.currentZoomedIndex = -1;
+    },
+    handleMouseEnter(index) {
+      if (window.innerWidth < 768) {
+        this.currentZoomedIndex = index; // Set the zoomed index on mouse enter
+      }
+    },
+    handleMouseLeave() {
+      if (window.innerWidth < 768) {
+        this.currentZoomedIndex = -1; // Reset the zoomed index on mouse leave
+      }
+    },
+  },
+  mounted() {
+    window.addEventListener('resize', this.handleResize);
+    this.handleResize();
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+  },
+}
+</script>
+
+<style>
+.v-container {
+  padding: 70px;
+}
+
+.v-list {
+  background-color: #f0f0f0;
+  padding: 30px;
+  height: 42.5rem;
+}
+
+.zoom-item {
+  background-color: #ffffff;
+  padding: 5px;
+  margin: 6px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: transform 0.5s ease;
+  width: 100%;
+  position: relative;
+}
+
+.zoom-item .v-list-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zoomed-item .v-list-item-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.zoomed-item {
+  background-color: #d1e7dd;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transform: scale(1.2);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+}
+</style>
