@@ -1,0 +1,140 @@
+///model
+# models.py
+from sqlalchemy import Column, Float, Integer
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class Temperature(Base):
+    __tablename__ = 'temperatures'
+
+    id = Column(Integer, primary_key=True, index=True)
+    value = Column(Float, nullable=False)
+
+///schema
+# schemas.py
+from pydantic import BaseModel
+
+class TemperatureCreate(BaseModel):
+    value: float
+
+class TemperatureResponse(BaseModel):
+    id: int
+    value: float
+
+    class Config:
+        orm_mode = True
+
+//
+from alembic import op
+import sqlalchemy as sa
+
+def upgrade():
+    op.create_table(
+        'temperatures',
+        sa.Column('id', sa.Integer, primary_key=True),
+        sa.Column('value', sa.Float, nullable=False),
+    )
+
+def downgrade():
+    op.drop_table('temperatures')
+
+//
+# main.py
+from fastapi import FastAPI, HTTPException
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from models import Base, Temperature
+from schemas import TemperatureCreate, TemperatureResponse
+import random
+
+DATABASE_URL = "postgresql://username:password@localhost/dbname"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+app = FastAPI()
+
+# Dependency to get the database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.post("/temperatures/", response_model=TemperatureResponse)
+def create_temperature(temperature: TemperatureCreate, db: Session = next(get_db())):
+    db_temperature = Temperature(value=temperature.value)
+    db.add(db_temperature)
+    db.commit()
+    db.refresh(db_temperature)
+    return db_temperature
+
+@app.get("/temperatures/", response_model=list[TemperatureResponse])
+def read_temperatures(skip: int = 0, limit: int = 100, db: Session = next(get_db())):
+    temperatures = db.query(Temperature).offset(skip).limit(limit).all()
+    return temperatures
+
+@app.post("/temperatures/bulk/")
+def create_bulk_temperatures(db: Session = next(get_db())):
+    temperatures = [Temperature(value=random.uniform(-30.0, 50.0)) for _ in range(1000)]
+    db.add_all(temperatures)
+    db.commit()
+    return {"message": "1000 temperature records inserted."}
+
+
+///
+# app.py
+from flask import Flask, request, jsonify
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from models import Base, Temperature
+from schemas import TemperatureSchema
+import random
+
+DATABASE_URL = "postgresql://username:password@localhost/dbname"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+app = Flask(__name__)
+
+# Create the database tables
+Base.metadata.create_all(bind=engine)
+
+@app.route('/temperatures/', methods=['POST'])
+def create_temperature():
+    data = request.json
+    schema = TemperatureSchema()
+    errors = schema.validate(data)
+    if errors:
+        return jsonify(errors), 400
+
+    new_temp = Temperature(value=data['value'])
+    db = SessionLocal()
+    db.add(new_temp)
+    db.commit()
+    db.refresh(new_temp)
+    db.close()
+    return schema.dump(new_temp), 201
+
+@app.route('/temperatures/', methods=['GET'])
+def read_temperatures():
+    db = SessionLocal()
+    temperatures = db.query(Temperature).all()
+    db.close()
+    schema = TemperatureSchema(many=True)
+    return schema.dump(temperatures), 200
+
+@app.route('/temperatures/bulk/', methods=['POST'])
+def create_bulk_temperatures():
+    db = SessionLocal()
+    temperatures = [Temperature(value=random.uniform(-30.0, 50.0)) for _ in range(1000)]
+    db.add_all(temperatures)
+    db.commit()
+    db.close()
+    return jsonify({"message": "1000 temperature records inserted."}), 201
+
+if __name__ == '__main__':
+    app.run(debug=True)
