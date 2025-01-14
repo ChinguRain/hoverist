@@ -1,0 +1,174 @@
+///Sample Model
+class DataModel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    value = db.Column(db.Float, nullable=False)
+
+    def __init__(self, value):
+        self.value = value
+
+///
+with app.app_context():
+    db.create_all()
+
+///
+import random
+
+@app.route('/insert_data', methods=['POST'])
+def insert_data():
+    # Generate 1000 random float values
+    data_to_insert = [DataModel(random.uniform(0.0, 100.0)) for _ in range(1000)]
+    
+    # Bulk insert
+    db.session.bulk_save_objects(data_to_insert)
+    db.session.commit()
+    
+    return "1000 records inserted successfully!", 201
+
+
+///
+from sqlalchemy import create_engine, Column, Float, Integer
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+import random
+
+# Define the base class
+Base = declarative_base()
+
+# Define the Temperature model
+class Temperature(Base):
+    __tablename__ = 'temperatures'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    temperature = Column(Float)
+
+# Create the database engine
+engine = create_engine('postgresql://username:password@localhost:5432/yourdatabase')
+Base.metadata.create_all(engine)
+
+# Generate 1000 random float values between -30.0 and 50.0
+temperature_data = [round(random.uniform(-30.0, 50.0), 2) for _ in range(1000)]
+
+# Create a session
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# Insert the temperature data into the database
+for temp in temperature_data:
+    temperature_entry = Temperature(temperature=temp)
+    session.add(temperature_entry)
+
+# Commit the changes
+session.commit()
+
+# Close the session
+session.close()
+
+
+/// model
+from sqlalchemy import Column, Integer, Float
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class Temperature(Base):
+    __tablename__ = 'temperature'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    temperature_celsius = Column(Float, nullable=False)
+
+    def __repr__(self):
+        return f"<Temperature(id={self.id}, temperature_celsius={self.temperature_celsius})>"
+
+///schema
+from pydantic import BaseModel
+from typing import List
+
+class TemperatureCreate(BaseModel):
+    temperature_celsius: float
+
+class TemperatureResponse(BaseModel):
+    id: int
+    temperature_celsius: float
+
+    class Config:
+        orm_mode = True
+
+class TemperatureListResponse(BaseModel):
+    temperatures: List[TemperatureResponse]
+
+///api
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from models import Temperature, Base
+from schemas import TemperatureCreate, TemperatureResponse, TemperatureListResponse
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://your_user:your_password@localhost:5432/your_db_name'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize the database
+db = SQLAlchemy(app)
+
+@app.before_first_request
+def create_tables():
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+    Base.metadata.create_all(engine)
+
+@app.route('/temperature', methods=['POST'])
+def insert_temperature():
+    data = request.get_json()
+    try:
+        # Validate and serialize input data using Pydantic
+        temperature_data = TemperatureCreate(**data)
+        new_temp = Temperature(temperature_celsius=temperature_data.temperature_celsius)
+        db.session.add(new_temp)
+        db.session.commit()
+        return jsonify(TemperatureResponse.from_orm(new_temp).dict()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/temperature', methods=['GET'])
+def get_all_temperatures():
+    temperatures = Temperature.query.all()
+    return jsonify(TemperatureListResponse(temperatures=[TemperatureResponse.from_orm(t) for t in temperatures]).dict()), 200
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+///insert
+import random
+from app import db
+from models import Temperature
+
+def insert_random_temperatures(n=1000):
+    for _ in range(n):
+        temp = random.uniform(-40, 50)  # Random temperature between -40°C and 50°C
+        new_temp = Temperature(temperature_celsius=temp)
+        db.session.add(new_temp)
+    db.session.commit()
+    print(f'{n} temperature records inserted.')
+
+
+//import random
+from app import db
+from models import Temperature
+
+def insert_random_temperatures(n=1000):
+    # Create a list of Temperature objects
+    temperatures = [Temperature(temperature_celsius=random.uniform(-40, 50)) for _ in range(n)]
+    
+    # Use bulk_save_objects to insert all the records at once
+    db.session.bulk_save_objects(temperatures)
+    
+    # Commit the session to persist the data
+    db.session.commit()
+    
+    print(f'{n} temperature records inserted.')
+
+if __name__ == '__main__':
+    insert_random_temperatures()
+
+if __name__ == '__main__':
+    insert_random_temperatures()
+
